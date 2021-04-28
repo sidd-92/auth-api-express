@@ -1,0 +1,30 @@
+{
+  "name": "auth-api-express",
+  "version": "1.0.0",
+  "description": "A Auth API using Express",
+  "main": "index.js",
+  "scripts": {
+    "start": "node index.js",
+    "start:dev": "nodemon index.js"
+  },
+  "repository": {
+    "type": "git",
+    "url": "git+https://github.com/sidd-92/auth-api-express.git"
+  },
+  "author": "",
+  "license": "ISC",
+  "bugs": {
+    "url": "https://github.com/sidd-92/auth-api-express/issues"
+  },
+  "homepage": "https://github.com/sidd-92/auth-api-express#readme",
+  "dependencies": {
+    "cors": "^2.8.5",
+    "dotenv": "^8.2.0",
+    "express": "^4.17.1",
+    "jsonwebtoken": "^8.5.1"
+  },
+  "devDependencies": {
+    "morgan": "^1.10.0",
+    "nodemon": "^2.0.7"
+  }
+}
