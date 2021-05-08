@@ -64,6 +64,7 @@ app.post("/login", (req, res) => {
     res.json({
       accessToken,
       refreshToken,
+      role: user.role,
     });
   } else {
     res.status(400).json({
