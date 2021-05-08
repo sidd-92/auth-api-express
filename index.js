@@ -66,7 +66,9 @@ app.post("/login", (req, res) => {
       refreshToken,
     });
   } else {
-    res.send("Username or password incorrect");
+    res.status(400).json({
+      message: "Incorrect Credentials",
+    });
   }
 });
 
