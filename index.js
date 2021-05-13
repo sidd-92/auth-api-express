@@ -38,6 +38,24 @@ app.get("/", (req, res) => {
   });
 });
 
+app.get("/user/:uid", (req, res) => {
+  const uid = req.params.uid;
+  const user = users.find((u) => {
+    return u.id === Number(uid);
+  });
+  if (user) {
+    res.status(200).json({
+      username: user.username,
+      role: user.role,
+      password: "****",
+    });
+  } else {
+    res.status(404).json({
+      message: "User Not Found",
+    });
+  }
+});
+
 app.post("/login", (req, res) => {
   // read username and password from request body
   const { username, password } = req.body;
@@ -64,7 +82,8 @@ app.post("/login", (req, res) => {
     res.json({
       accessToken,
       refreshToken,
-      role: user.role,
+      username: username,
+      id: user.id,
     });
   } else {
     res.status(400).json({

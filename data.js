@@ -1,11 +1,25 @@
 const users = [
   {
+    id: 1,
     username: "john",
     password: "password123admin",
     role: "admin",
   },
   {
+    id: 2,
     username: "anna",
+    password: "password123member",
+    role: "member",
+  },
+  {
+    id: 3,
+    username: "jake",
+    password: "password123admin",
+    role: "member",
+  },
+  {
+    id: 4,
+    username: "frank",
     password: "password123member",
     role: "member",
   },
