@@ -1,15 +1,31 @@
 require("dotenv").config();
 const express = require("express");
 const jwt = require("jsonwebtoken");
+const multer = require("multer");
 const morgan = require("morgan");
+const path = require("path");
 const cors = require("cors");
 const app = express();
 const port = process.env.PORT || 3000;
 const { users, books } = require("./data");
 const authenticateJWT = require("./middleware/auth");
+
+let storage = multer.diskStorage({
+  destination: function (req, file, cb) {
+    cb(null, `${__dirname}/uploads`);
+  },
+  filename: function (req, file, cb) {
+    const uniqueSuffix = Date.now() + "-" + Math.round(Math.random() * 1e9);
+    cb(null, `${uniqueSuffix}-${file.originalname}`);
+  },
+});
+
+let upload = multer({ storage: storage });
+
 app.use(express.json());
 app.use(morgan("dev"));
 app.use(cors());
+app.use(express.static(`${__dirname}/uploads`));
 console.log("PROCE ENV", process.env.NODE_ENV);
 const accessTokenSecret =
   process.env.NODE_ENV === "development"
@@ -36,6 +52,20 @@ app.get("/", (req, res) => {
       },
     ],
   });
+});
+
+app.post("/profile", upload.single("avatar"), function (req, res, next) {
+  if (req.file) {
+    console.log(req.file);
+    res.status(200).json({
+      message: "Uploded",
+      url: req.file.path,
+    });
+  } else {
+    res.status(404).json({ message: "avatar field not given" });
+  }
+  // req.file is the `avatar` file
+  // req.body will hold the text fields, if there were any
 });
 
 app.get("/user/:uid", (req, res) => {
