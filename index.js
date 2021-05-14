@@ -6,11 +6,15 @@ const morgan = require("morgan");
 const cors = require("cors");
 const multerS3 = require("multer-s3");
 const aws = require("aws-sdk");
-const app = express();
+const colors = require("colors");
 const port = process.env.PORT || 3000;
 const { users, books } = require("./data");
 const authenticateJWT = require("./middleware/auth");
+const connectDB = require("./config/db");
 
+connectDB();
+
+const app = express();
 app.use(express.json());
 app.use(morgan("dev"));
 app.use(cors());
@@ -22,6 +26,7 @@ aws.config.update({
 });
 
 let s3 = new aws.S3();
+
 var upload = multer({
   storage: multerS3({
     s3: s3,
@@ -85,19 +90,6 @@ app.post("/profile", function (req, res) {
     }
   });
 });
-/* 
-app.post("/profile", upload.single("avatar"), function (req, res, next) {
-  if (req.file) {
-    res.status(200).json({
-      message: "Uploded",
-      url: req.file.location,
-    });
-  } else {
-    res.status(404).json({ message: "avatar field not given" });
-  }
-  // req.file is the `avatar` file
-  // req.body will hold the text fields, if there were any
-}); */
 
 app.get("/user/:uid", (req, res) => {
   const uid = req.params.uid;
@@ -185,5 +177,5 @@ app.get("/books", authenticateJWT, (req, res) => {
   res.status(200).json(books);
 });
 app.listen(port, () => {
-  console.log(`Example app listening at http://localhost:${port}`);
+  console.log(`Example app listening at http://localhost:${port}`.yellow.bold);
 });
