@@ -3,30 +3,36 @@ const express = require("express");
 const jwt = require("jsonwebtoken");
 const multer = require("multer");
 const morgan = require("morgan");
-const path = require("path");
 const cors = require("cors");
+const multerS3 = require("multer-s3");
+const aws = require("aws-sdk");
 const app = express();
 const port = process.env.PORT || 3000;
 const { users, books } = require("./data");
 const authenticateJWT = require("./middleware/auth");
 
-let storage = multer.diskStorage({
-  destination: function (req, file, cb) {
-    cb(null, `${__dirname}/uploads`);
-  },
-  filename: function (req, file, cb) {
-    const uniqueSuffix = Date.now() + "-" + Math.round(Math.random() * 1e9);
-    cb(null, `${uniqueSuffix}-${file.originalname}`);
-  },
-});
-
-let upload = multer({ storage: storage });
-
 app.use(express.json());
 app.use(morgan("dev"));
 app.use(cors());
-app.use(express.static(`${__dirname}/uploads`));
-console.log("PROCE ENV", process.env.NODE_ENV);
+
+aws.config.update({
+  secretAccessKey: process.env.AWS_SECRET_KEY,
+  accessKeyId: process.env.AWS_ACCESS_KEY,
+  region: process.env.AWS_REGION,
+});
+
+let s3 = new aws.S3();
+var upload = multer({
+  storage: multerS3({
+    s3: s3,
+    bucket: "my-food-blog-images",
+    acl: "public-read",
+    key: function (req, file, cb) {
+      cb(null, file.originalname);
+    },
+  }),
+}).single("avatar");
+
 const accessTokenSecret =
   process.env.NODE_ENV === "development"
     ? process.env.JWT_SECRET_DEV
@@ -54,19 +60,44 @@ app.get("/", (req, res) => {
   });
 });
 
+app.post("/profile", function (req, res) {
+  upload(req, res, function (err) {
+    if (err instanceof multer.MulterError) {
+      console.log(err.message);
+      return res.status(500).json({
+        error: err.message,
+      });
+    } else if (err) {
+      console.log(err.message);
+      return res.status(404).json({
+        error: err.message,
+      });
+    } else {
+      // Everything went fine.
+      if (req.file) {
+        res.status(200).json({
+          message: "Uploded",
+          url: req.file.location,
+        });
+      } else {
+        res.status(404).json({ message: "avatar field not given" });
+      }
+    }
+  });
+});
+/* 
 app.post("/profile", upload.single("avatar"), function (req, res, next) {
   if (req.file) {
-    console.log(req.file);
     res.status(200).json({
       message: "Uploded",
-      url: req.file.path,
+      url: req.file.location,
     });
   } else {
     res.status(404).json({ message: "avatar field not given" });
   }
   // req.file is the `avatar` file
   // req.body will hold the text fields, if there were any
-});
+}); */
 
 app.get("/user/:uid", (req, res) => {
   const uid = req.params.uid;
