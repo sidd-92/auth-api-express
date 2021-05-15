@@ -24,4 +24,28 @@ const authenticateJWT = (req, res, next) => {
   }
 };
 
-module.exports = authenticateJWT;
+const authenticateJWTAdmin = (req, res, next) => {
+  const authHeader = req.headers.authorization;
+
+  if (authHeader) {
+    const token = authHeader.split(" ")[1];
+
+    jwt.verify(token, accessTokenSecret, (err, user) => {
+      if (err) {
+        return res.status(403).json({ message: "Not Authorized" });
+      }
+      if (user.isAdmin) {
+        console.log("IS ADMIN");
+        req.user = user;
+        next();
+      } else {
+        console.log("IS NOT ADMIN");
+        return res.status(403).json({ message: "Not Authorized" });
+      }
+    });
+  } else {
+    res.sendStatus(401);
+  }
+};
+
+module.exports = { authenticateJWT, authenticateJWTAdmin };

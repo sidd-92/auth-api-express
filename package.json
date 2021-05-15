@@ -19,6 +19,7 @@
   "homepage": "https://github.com/sidd-92/auth-api-express#readme",
   "dependencies": {
     "aws-sdk": "^2.906.0",
+    "bcrypt": "^5.0.1",
     "colors": "^1.4.0",
     "cors": "^2.8.5",
     "dotenv": "^8.2.0",
