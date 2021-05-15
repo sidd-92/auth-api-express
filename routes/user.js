@@ -6,6 +6,7 @@ const jwt = require("jsonwebtoken");
 const router = express.Router();
 const { authenticateJWTAdmin } = require("../middleware/auth");
 
+let refreshTokens = [];
 /**
  * Sign Up User
  */
@@ -102,7 +103,6 @@ router.post("/add_admin", authenticateJWTAdmin, (req, res, next) => {
       }
     });
 });
-
 router.post("/login", (req, res, next) => {
   User.find({ email: req.body.email })
     .exec()
@@ -111,6 +111,7 @@ router.post("/login", (req, res, next) => {
         process.env.NODE_ENV === "development"
           ? process.env.JWT_SECRET_DEV
           : process.env.JWT_SECRET_PROD;
+
       if (user.length < 1) {
         return res.send(401).json({
           message: "Auth Failed",
@@ -131,13 +132,23 @@ router.post("/login", (req, res, next) => {
             },
             jwtKey,
             {
-              expiresIn: "20m",
+              expiresIn: "1m",
             }
           );
 
+          const refreshToken = jwt.sign(
+            {
+              email: user[0].email,
+              userID: user[0]._id,
+              isAdmin: user[0].isAdmin,
+            },
+            process.env.JWT_REFRESH_SECRET
+          );
+          refreshTokens.push(refreshToken);
           return res.status(200).json({
             message: "Auth Sucessfull",
             token: token,
+            refreshToken: refreshToken,
           });
         }
         return res.send(401).json({
@@ -176,7 +187,6 @@ router.post("/decode", (req, res, next) => {
   });
 });
 
-const refreshTokens = [];
 router.post("/token", (req, res) => {
   const { token } = req.body;
   let jwtKey =
@@ -187,25 +197,32 @@ router.post("/token", (req, res) => {
     return res.sendStatus(401);
   }
 
-  if (!refreshTokens.includes(token)) {
-    return res.sendStatus(403);
-  }
-
   jwt.verify(token, process.env.JWT_REFRESH_SECRET, (err, user) => {
     if (err) {
+      console.log("ERROR", err);
       return res.sendStatus(403);
     }
 
     const accessToken = jwt.sign(
-      { email: user.email, userID: user.userID, isAdmin: user.isAdmin },
-      jwtKey,
+      {
+        email: user.email,
+        userID: user._id,
+        isAdmin: user.isAdmin,
+      },
+      process.env.JWT_SECRET_DEV,
       { expiresIn: "20m" }
     );
 
     res.json({
-      accessToken,
+      token: accessToken,
     });
   });
+});
+
+router.post("/logout", (req, res) => {
+  const { token } = req.body;
+  refreshTokens = refreshTokens.filter((t) => t !== token);
+  res.status(200).json({ message: "Logout successful" });
 });
 
 module.exports = router;
