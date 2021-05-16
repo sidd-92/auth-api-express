@@ -7,6 +7,7 @@ const port = process.env.PORT || 3000;
 const connectDB = require("./config/db");
 const uploadRoute = require("./routes/upload");
 const userRoute = require("./routes/user");
+const imageRoute = require("./routes/image");
 connectDB();
 
 const isDev = process.env.NODE_ENV === "development" ? true : false;
@@ -18,6 +19,7 @@ app.use(cors());
 
 app.use("/api/upload", uploadRoute);
 app.use("/api/user", userRoute);
+app.use("/api/image", imageRoute);
 
 app.get("/", (req, res) => {
   res.status(200).json({
