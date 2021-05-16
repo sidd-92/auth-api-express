@@ -200,6 +200,7 @@ router.post("/token", (req, res) => {
   }
 
   jwt.verify(token, process.env.JWT_REFRESH_SECRET, (err, user) => {
+    console.log("USER", user);
     if (err) {
       console.log("ERROR", JSON.stringify(err, null, 3));
       return res.status(403).json({
@@ -210,7 +211,7 @@ router.post("/token", (req, res) => {
     const accessToken = jwt.sign(
       {
         email: user.email,
-        userID: user._id,
+        userID: user.userID,
         isAdmin: user.isAdmin,
       },
       jwtKey,
