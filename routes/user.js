@@ -132,7 +132,7 @@ router.post("/login", (req, res, next) => {
             },
             jwtKey,
             {
-              expiresIn: "1m",
+              expiresIn: "2h",
             }
           );
 
@@ -215,7 +215,7 @@ router.post("/token", (req, res) => {
         isAdmin: user.isAdmin,
       },
       jwtKey,
-      { expiresIn: "20m" }
+      { expiresIn: "2h" }
     );
 
     res.json({
