@@ -209,7 +209,7 @@ router.post("/token", (req, res) => {
         userID: user._id,
         isAdmin: user.isAdmin,
       },
-      process.env.JWT_SECRET_DEV,
+      jwtKey,
       { expiresIn: "20m" }
     );
 
