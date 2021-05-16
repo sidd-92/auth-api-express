@@ -194,13 +194,17 @@ router.post("/token", (req, res) => {
       ? process.env.JWT_SECRET_DEV
       : process.env.JWT_SECRET_PROD;
   if (!token) {
-    return res.sendStatus(401);
+    return res.status(401).json({
+      message: "JSON TOKEN NOT VALID",
+    });
   }
 
   jwt.verify(token, process.env.JWT_REFRESH_SECRET, (err, user) => {
     if (err) {
-      console.log("ERROR", err);
-      return res.sendStatus(403);
+      console.log("ERROR", JSON.stringify(err, null, 3));
+      return res.status(403).json({
+        message: err.message,
+      });
     }
 
     const accessToken = jwt.sign(
