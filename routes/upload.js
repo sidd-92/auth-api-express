@@ -16,7 +16,7 @@ let s3 = new aws.S3();
 var upload = multer({
   storage: multerS3({
     s3: s3,
-    bucket: "my-food-blog-images",
+    bucket: process.env.AWS_S3_BUCKET,
     acl: "public-read",
     key: function (req, file, cb) {
       cb(null, file.originalname);
@@ -49,5 +49,24 @@ router.post("/", function (req, res) {
     }
   });
 });
+/* 
+router.post("/remove", function (req, res) {
+  let filename = req.body;
+  let params = {
+    Key: `${filename}`,
+    Bucket: process.env.AWS_S3_BUCKET,
+  };
+  if (!filename) {
+    res.status(404).json({
+      message: "File Name Not Provided",
+    });
+  } else {
+    s3.deleteObject(params, function (err, data) {
+      if (err) console.log(err, err.stack);
+      // an error occurred
+      else res.status(200).json({ data: data }); // successful response
+    });
+  }
+}); */
 
 module.exports = router;
