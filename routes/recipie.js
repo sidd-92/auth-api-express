@@ -5,7 +5,7 @@ const Images = require("../models/image");
 const router = express.Router();
 const { authenticateJWTAdmin } = require("../middleware/auth");
 
-router.get("/all", authenticateJWTAdmin, (req, res, next) => {
+router.get("/all", (req, res, next) => {
   Recipie.find()
     .populate("recipieImage", "caption url _id")
     .sort({ updatedAt: -1 })
