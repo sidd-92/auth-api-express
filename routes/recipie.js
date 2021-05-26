@@ -31,7 +31,8 @@ router.post("/add", authenticateJWTAdmin, (req, res, next) => {
       const recipie = new Recipie({
         _id: new mongoose.Types.ObjectId(),
         recipieName: req.body.recipieName,
-        recipieDescription: req.body.recipieDescription,
+        recipieDescription_Text: req.body.recipieDescription_Text,
+        recipieDescription_HTML: req.body.recipieDescription_HTML,
         recipieTotalTime: req.body.recipieTotalTime,
         recipieIngredients: req.body.recipieIngredients,
         recipieImage: req.body.imageId,
