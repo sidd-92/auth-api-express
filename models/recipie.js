@@ -6,13 +6,13 @@ const mongoose = require("mongoose");
 const recipieSchema = mongoose.Schema({
   _id: mongoose.Schema.Types.ObjectId,
   recipieName: { type: String, required: true },
-  recipieDescription: { type: String, required: true },
-  recipieTotalTime: { type: String, required: true, default: "5 Min" },
+  recipieDescription_HTML: { type: String },
+  recipieDescription_Text: { type: String },
+  recipieTotalTime: { type: String, default: "5 Min" },
   recipieIngredients: { type: Array, required: true },
   recipieImage: {
     type: mongoose.Schema.Types.ObjectId,
     ref: "Images",
-    required: true,
   },
 });
 
