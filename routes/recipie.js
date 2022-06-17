@@ -3,57 +3,57 @@ const mongoose = require("mongoose");
 const Recipie = require("../models/recipie");
 const Images = require("../models/image");
 const router = express.Router();
-const { authenticateJWTAdmin } = require("../middleware/auth");
+const { authenticateJWTAdmin, authenticateJWT } = require("../middleware/auth");
 
-router.get("/all", (req, res, next) => {
-  Recipie.find()
-    .populate("recipieImage", "caption url _id")
-    .sort({ updatedAt: -1 })
-    .select()
-    .exec()
-    .then((result) => {
-      const response = [...result];
-      res.status(200).json(response);
-    })
-    .catch((err) => console.log(err));
+router.get("/all", authenticateJWT, (req, res, next) => {
+	Recipie.find()
+		.populate("recipieImage", "caption url _id")
+		.sort({ updatedAt: -1 })
+		.select()
+		.exec()
+		.then((result) => {
+			const response = [...result];
+			res.status(200).json(response);
+		})
+		.catch((err) => console.log(err));
 });
 
 router.post("/add", authenticateJWTAdmin, (req, res, next) => {
-  let imageId = req.body.imageId;
-  Images.findById(imageId)
-    .exec()
-    .then((image) => {
-      if (!image) {
-        return res.status(404).json({
-          message: "Image Not Found",
-        });
-      }
-      const recipie = new Recipie({
-        _id: new mongoose.Types.ObjectId(),
-        recipieName: req.body.recipieName,
-        recipieDescription_Text: req.body.recipieDescription_Text,
-        recipieDescription_HTML: req.body.recipieDescription_HTML,
-        recipieTotalTime: req.body.recipieTotalTime,
-        recipieIngredients: req.body.recipieIngredients,
-        recipieImage: req.body.imageId,
-      });
-      return recipie.save();
-    })
-    .then((result) => {
-      console.log(result);
-      res.status(201).json({
-        message: "Recipie Created",
-        createdRecipie: {
-          ...result._doc,
-        },
-      });
-    })
-    .catch((error) => {
-      console.log(err);
-      res.status(500).json({
-        error: err,
-      });
-    });
+	let imageId = req.body.imageId;
+	Images.findById(imageId)
+		.exec()
+		.then((image) => {
+			if (!image) {
+				return res.status(404).json({
+					message: "Image Not Found",
+				});
+			}
+			const recipie = new Recipie({
+				_id: new mongoose.Types.ObjectId(),
+				recipieName: req.body.recipieName,
+				recipieDescription_Text: req.body.recipieDescription_Text,
+				recipieDescription_HTML: req.body.recipieDescription_HTML,
+				recipieTotalTime: req.body.recipieTotalTime,
+				recipieIngredients: req.body.recipieIngredients,
+				recipieImage: req.body.imageId,
+			});
+			return recipie.save();
+		})
+		.then((result) => {
+			console.log(result);
+			res.status(201).json({
+				message: "Recipie Created",
+				createdRecipie: {
+					...result._doc,
+				},
+			});
+		})
+		.catch((error) => {
+			console.log(err);
+			res.status(500).json({
+				error: err,
+			});
+		});
 });
 /* 
 exports.orders_create = (req, res, next) => {
