@@ -111,8 +111,8 @@ router.post("/add_admin", authenticateJWTAdmin, (req, res, next) => {
  * DELETE USER
  */
 
-router.delete("/remove", authenticateJWTAdmin, (req, res, next) => {
-	User.deleteOne({ email: req.body.email })
+router.delete("/remove/:id", authenticateJWTAdmin, (req, res, next) => {
+	User.deleteOne({ _id: req.params.id })
 		.exec()
 		.then((user) => {
 			return res.status(200).json({ message: "User Deleted", user });
