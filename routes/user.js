@@ -25,7 +25,7 @@ router.get("/all", authenticateJWTAdmin, (req, res, next) => {
 /**
  * GET SINGLE USER
  */
-router.get("/all/:id", authenticateJWTAdmin, (req, res, next) => {
+router.get("/all/:id", authenticateJWT, (req, res, next) => {
 	let id = req.params.id;
 	User.findById(id)
 		.exec()
