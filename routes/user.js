@@ -23,6 +23,21 @@ router.get("/all", authenticateJWTAdmin, (req, res, next) => {
 });
 
 /**
+ * GET SINGLE USER
+ */
+router.get("/all/:id", authenticateJWTAdmin, (req, res, next) => {
+	let id = req.params.id;
+	User.findById(id)
+		.exec()
+		.then((user) => {
+			return res.status(200).json(user);
+		})
+		.catch((error) => {
+			return res.status(404).json({ error: error });
+		});
+});
+
+/**
  * Sign Up User ( NON - ADMIN )
  */
 router.post("/signup", (req, res, next) => {
