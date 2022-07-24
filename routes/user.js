@@ -29,9 +29,6 @@ router.post("/auth/google", async (req, res) => {
 				.exec()
 				.then((user) => {
 					if (user.length >= 1) {
-						return res.status(409).json({
-							message: "User Already Exists",
-						});
 					} else {
 						//Create New User in DB
 						const user = new User({
@@ -45,32 +42,6 @@ router.post("/auth/google", async (req, res) => {
 							.then((result) => {
 								console.log("USER", result);
 								//Sign JWT token
-								const token = jwt.sign(
-									{
-										email: details.email,
-										userID: details.sub,
-										isAdmin: false,
-									},
-									jwtKey,
-									{
-										expiresIn: "2h",
-									}
-								);
-								// create refresh token
-								const refreshToken = jwt.sign(
-									{
-										email: details.email,
-										userID: details.sub,
-										isAdmin: false,
-									},
-									process.env.JWT_REFRESH_SECRET
-								);
-								refreshTokens.push(refreshToken);
-								return res.status(200).json({
-									message: "Auth Sucessfull",
-									token: token,
-									refreshToken: refreshToken,
-								});
 							})
 							.catch((err) => {
 								console.log(err);
@@ -80,6 +51,32 @@ router.post("/auth/google", async (req, res) => {
 							});
 					}
 				});
+			const token = jwt.sign(
+				{
+					email: details.email,
+					userID: details.sub,
+					isAdmin: false,
+				},
+				jwtKey,
+				{
+					expiresIn: "2h",
+				}
+			);
+			// create refresh token
+			const refreshToken = jwt.sign(
+				{
+					email: details.email,
+					userID: details.sub,
+					isAdmin: false,
+				},
+				process.env.JWT_REFRESH_SECRET
+			);
+			refreshTokens.push(refreshToken);
+			return res.status(200).json({
+				message: "Auth Sucessfull",
+				token: token,
+				refreshToken: refreshToken,
+			});
 		})
 		.catch((error) => {
 			res.status(401).json({ err: error });
