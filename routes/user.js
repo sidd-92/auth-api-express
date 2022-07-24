@@ -5,8 +5,86 @@ const bcrypt = require("bcrypt");
 const jwt = require("jsonwebtoken");
 const router = express.Router();
 const { authenticateJWTAdmin, authenticateJWT } = require("../middleware/auth");
+const { OAuth2Client } = require("google-auth-library");
 
 let refreshTokens = [];
+const oAuth2Client = new OAuth2Client(process.env.GOOGLE_CLIENT_ID, process.env.GOOGLE_CLIENT_SECRET, "postmessage");
+/**
+ * Instead of specifying the type of client you'd like to use (JWT, OAuth2, etc)
+ * this library will automatically choose the right client based on the environment.
+ */
+
+router.post("/auth/google", async (req, res) => {
+	let jwtKey = process.env.NODE_ENV === "development" ? process.env.JWT_SECRET_DEV : process.env.JWT_SECRET_PROD;
+	const tokens = await oAuth2Client.getToken(req.body.code); // exchange code for tokens
+	const verify = oAuth2Client
+		.verifyIdToken({
+			idToken: tokens.tokens.id_token,
+			audience: "741542445783-64d75tlk53o8b893mgetfl9r0apgi8b9.apps.googleusercontent.com",
+		})
+		.then((data) => {
+			let details = data.getPayload();
+			//Find User with email in DB
+			User.find({ email: details.email })
+				.exec()
+				.then((user) => {
+					if (user.length >= 1) {
+						return res.status(409).json({
+							message: "User Already Exists",
+						});
+					} else {
+						//Create New User in DB
+						const user = new User({
+							_id: new mongoose.Types.ObjectId(),
+							email: details.email,
+							password: null,
+							isAdmin: false,
+							googleSignUp: true,
+						});
+						user.save()
+							.then((result) => {
+								console.log("USER", result);
+								//Sign JWT token
+								const token = jwt.sign(
+									{
+										email: details.email,
+										userID: details.sub,
+										isAdmin: false,
+									},
+									jwtKey,
+									{
+										expiresIn: "2h",
+									}
+								);
+								// create refresh token
+								const refreshToken = jwt.sign(
+									{
+										email: details.email,
+										userID: details.sub,
+										isAdmin: false,
+									},
+									process.env.JWT_REFRESH_SECRET
+								);
+								refreshTokens.push(refreshToken);
+								return res.status(200).json({
+									message: "Auth Sucessfull",
+									token: token,
+									refreshToken: refreshToken,
+								});
+							})
+							.catch((err) => {
+								console.log(err);
+								res.status(500).json({
+									error: err,
+								});
+							});
+					}
+				});
+		})
+		.catch((error) => {
+			res.status(401).json({ err: error });
+		});
+});
 
 /**
  * GET ALL USERS
@@ -132,18 +210,32 @@ router.post("/login", (req, res, next) => {
 	User.find({ email: req.body.email })
 		.exec()
 		.then((user) => {
+			console.log("USER LOGIN", user);
 			let jwtKey =
 				process.env.NODE_ENV === "development" ? process.env.JWT_SECRET_DEV : process.env.JWT_SECRET_PROD;
 
 			if (user.length < 1) {
-				return res.send(401).json({
+				return res.status(401).json({
 					message: "Auth Failed",
+				});
+			}
+			if (
+				user[0].password == null ||
+				user[0].password == "" ||
+				req.body.password == null ||
+				req.body.password == "" ||
+				user[0].googleSignUp == true
+			) {
+				return res.status(401).json({
+					message: "Auth Failed: Use Google Sign In ",
 				});
 			}
 			bcrypt.compare(req.body.password, user[0].password, (err, result) => {
 				if (err) {
-					return res.send(401).json({
+					console.log("ERROR BCRYPT", err);
+					return res.status(401).json({
 						message: "Auth Failed",
+						detail: err.message,
 					});
 				}
 				if (result) {
@@ -174,7 +266,7 @@ router.post("/login", (req, res, next) => {
 						refreshToken: refreshToken,
 					});
 				}
-				return res.send(401).json({
+				return res.status(401).json({
 					message: "Auth Failed",
 				});
 			});
