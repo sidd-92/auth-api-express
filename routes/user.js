@@ -20,16 +20,15 @@ router.post("/auth/google", async (req, res) => {
 	const verify = oAuth2Client
 		.verifyIdToken({
 			idToken: tokens.tokens.id_token,
-			audience: "741542445783-64d75tlk53o8b893mgetfl9r0apgi8b9.apps.googleusercontent.com",
+			audience: process.env.GOOGLE_CLIENT_ID,
 		})
 		.then((data) => {
 			let details = data.getPayload();
-			//Find User with email in DB
+			//Find User with email in DB - create user if doesnt exist
 			User.find({ email: details.email })
 				.exec()
 				.then((user) => {
-					if (user.length >= 1) {
-					} else {
+					if (user.length < 1) {
 						//Create New User in DB
 						const user = new User({
 							_id: new mongoose.Types.ObjectId(),
@@ -41,7 +40,6 @@ router.post("/auth/google", async (req, res) => {
 						user.save()
 							.then((result) => {
 								console.log("USER", result);
-								//Sign JWT token
 							})
 							.catch((err) => {
 								console.log(err);
@@ -51,6 +49,7 @@ router.post("/auth/google", async (req, res) => {
 							});
 					}
 				});
+			//Sign JWT token
 			const token = jwt.sign(
 				{
 					email: details.email,
