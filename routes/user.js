@@ -24,6 +24,7 @@ router.post("/auth/google", async (req, res) => {
 		})
 		.then((data) => {
 			let details = data.getPayload();
+			let userIsAdmin = false;
 			//Find User with email in DB - create user if doesnt exist
 			User.find({ email: details.email })
 				.exec()
@@ -47,6 +48,9 @@ router.post("/auth/google", async (req, res) => {
 									error: err,
 								});
 							});
+					} else {
+						// Get the Admin Details from DB
+						userIsAdmin = user[0].isAdmin;
 					}
 				});
 			//Sign JWT token
@@ -54,7 +58,7 @@ router.post("/auth/google", async (req, res) => {
 				{
 					email: details.email,
 					userID: details.sub,
-					isAdmin: false,
+					isAdmin: userIsAdmin,
 				},
 				jwtKey,
 				{
@@ -66,7 +70,7 @@ router.post("/auth/google", async (req, res) => {
 				{
 					email: details.email,
 					userID: details.sub,
-					isAdmin: false,
+					isAdmin: userIsAdmin,
 				},
 				process.env.JWT_REFRESH_SECRET
 			);
