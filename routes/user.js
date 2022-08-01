@@ -22,11 +22,11 @@ router.post("/auth/google", async (req, res) => {
 			idToken: tokens.tokens.id_token,
 			audience: process.env.GOOGLE_CLIENT_ID,
 		})
-		.then((data) => {
+		.then(async (data) => {
 			let details = data.getPayload();
 			let userIsAdmin = false;
 			//Find User with email in DB - create user if doesnt exist
-			User.find({ email: details.email })
+			await User.find({ email: details.email })
 				.exec()
 				.then((user) => {
 					if (user.length < 1) {
@@ -40,7 +40,34 @@ router.post("/auth/google", async (req, res) => {
 						});
 						user.save()
 							.then((result) => {
-								console.log("USER", result);
+								console.log("USER", result._id);
+								//Sign JWT token
+								const token = jwt.sign(
+									{
+										email: details.email,
+										userID: result._id,
+										isAdmin: userIsAdmin,
+									},
+									jwtKey,
+									{
+										expiresIn: "2h",
+									}
+								);
+								// create refresh token
+								const refreshToken = jwt.sign(
+									{
+										email: details.email,
+										userID: result._id,
+										isAdmin: userIsAdmin,
+									},
+									process.env.JWT_REFRESH_SECRET
+								);
+								refreshTokens.push(refreshToken);
+								return res.status(200).json({
+									message: "Auth Sucessfull",
+									token: token,
+									refreshToken: refreshToken,
+								});
 							})
 							.catch((err) => {
 								console.log(err);
@@ -51,35 +78,36 @@ router.post("/auth/google", async (req, res) => {
 					} else {
 						// Get the Admin Details from DB
 						userIsAdmin = user[0].isAdmin;
+						let userID = user[0]._id;
+						//Sign JWT token
+						const token = jwt.sign(
+							{
+								email: details.email,
+								userID: userID,
+								isAdmin: userIsAdmin,
+							},
+							jwtKey,
+							{
+								expiresIn: "2h",
+							}
+						);
+						// create refresh token
+						const refreshToken = jwt.sign(
+							{
+								email: details.email,
+								userID: userID,
+								isAdmin: userIsAdmin,
+							},
+							process.env.JWT_REFRESH_SECRET
+						);
+						refreshTokens.push(refreshToken);
+						return res.status(200).json({
+							message: "Auth Sucessfull",
+							token: token,
+							refreshToken: refreshToken,
+						});
 					}
 				});
-			//Sign JWT token
-			const token = jwt.sign(
-				{
-					email: details.email,
-					userID: details.sub,
-					isAdmin: userIsAdmin,
-				},
-				jwtKey,
-				{
-					expiresIn: "2h",
-				}
-			);
-			// create refresh token
-			const refreshToken = jwt.sign(
-				{
-					email: details.email,
-					userID: details.sub,
-					isAdmin: userIsAdmin,
-				},
-				process.env.JWT_REFRESH_SECRET
-			);
-			refreshTokens.push(refreshToken);
-			return res.status(200).json({
-				message: "Auth Sucessfull",
-				token: token,
-				refreshToken: refreshToken,
-			});
 		})
 		.catch((error) => {
 			res.status(401).json({ err: error });
