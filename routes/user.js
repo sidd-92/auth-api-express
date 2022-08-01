@@ -105,14 +105,20 @@ router.get("/all", authenticateJWTAdmin, (req, res, next) => {
  */
 router.get("/all/:id", authenticateJWT, (req, res, next) => {
 	let id = req.params.id;
-	User.findById(id)
-		.exec()
-		.then((user) => {
-			return res.status(200).json(user);
-		})
-		.catch((error) => {
-			return res.status(404).json({ error: error });
-		});
+	if (id === req.user["userID"]) {
+		let projection = req.user["isAdmin"] ? "-password" : "browserLoggedIn googleSignUp lastLoggedIn email -_id";
+		User.findById(id)
+			.select(projection)
+			.exec()
+			.then((user) => {
+				return res.status(200).json(user);
+			})
+			.catch((error) => {
+				return res.status(404).json({ error: error });
+			});
+	} else {
+		return res.status(404).json({ message: "Invalid User" });
+	}
 });
 
 /**
@@ -181,6 +187,42 @@ router.post("/add_admin", authenticateJWTAdmin, (req, res, next) => {
 			return res.status(409).json({
 				message: "User doesn't exist, please sign up",
 				error: error,
+			});
+		});
+});
+
+/**
+ * Update Metadata User Details
+ * 1. Find all users by email id
+ * 2. If user is existing, update the existing user with details
+ * 3. If user doesn't exist then give an error to user that they need to sign up
+ */
+
+router.patch("/update/meta/:id", authenticateJWT, (req, res, next) => {
+	const id = req.params.id;
+	const updateOPS = {};
+	//req.body is an Array
+	for (const key in req.body) {
+		if (key === "browserLoggedIn" || key === "isLoggedIn" || key === "lastLoggedIn") {
+			if (Object.hasOwnProperty.call(req.body, key)) {
+				const element = req.body[key];
+				updateOPS[key] = element;
+			}
+		}
+	}
+
+	User.findByIdAndUpdate({ _id: id }, { $set: updateOPS })
+		.exec()
+		.then((result) => {
+			console.log(result);
+			res.status(200).json({
+				message: "User Updated",
+			});
+		})
+		.catch((err) => {
+			console.log(err);
+			res.status(500).json({
+				error: err,
 			});
 		});
 });
