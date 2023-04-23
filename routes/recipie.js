@@ -5,9 +5,9 @@ const Images = require("../models/image");
 const router = express.Router();
 const { authenticateJWTAdmin, authenticateJWT } = require("../middleware/auth");
 
-router.get("/all", authenticateJWT, (req, res, next) => {
+router.get("/all", (req, res, next) => {
 	Recipie.find()
-		.populate("recipieImage", "caption url _id")
+		.populate("recipieImage")
 		.sort({ updatedAt: -1 })
 		.select()
 		.exec()
@@ -19,7 +19,7 @@ router.get("/all", authenticateJWT, (req, res, next) => {
 });
 
 router.post("/add", authenticateJWTAdmin, (req, res, next) => {
-	let imageId = req.body.imageId;
+	let imageId = req.body.recipieImage;
 	Images.findById(imageId)
 		.exec()
 		.then((image) => {
@@ -35,7 +35,7 @@ router.post("/add", authenticateJWTAdmin, (req, res, next) => {
 				recipieDescription_HTML: req.body.recipieDescription_HTML,
 				recipieTotalTime: req.body.recipieTotalTime,
 				recipieIngredients: req.body.recipieIngredients,
-				recipieImage: req.body.imageId,
+				recipieImage: req.body.recipieImage,
 			});
 			return recipie.save();
 		})
@@ -53,6 +53,19 @@ router.post("/add", authenticateJWTAdmin, (req, res, next) => {
 			res.status(500).json({
 				error: err,
 			});
+		});
+});
+
+router.delete("/remove/:id", authenticateJWTAdmin, (req, res, next) => {
+	let id = req.params.id;
+	Recipie.remove({ _id: id })
+		.exec()
+		.then((result) => {
+			res.status(200).json({ message: "Recipie Deleted" });
+		})
+		.catch((err) => {
+			console.log("Err", err);
+			res.status(500).json({ message: "Server Error" });
 		});
 });
 /* 
