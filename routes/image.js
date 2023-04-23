@@ -4,7 +4,7 @@ const Images = require("../models/image");
 const router = express.Router();
 const { authenticateJWTAdmin, authenticateJWT } = require("../middleware/auth");
 
-router.get("/all", authenticateJWT, (req, res, next) => {
+router.get("/all", (req, res, next) => {
 	Images.find()
 		.sort({ updatedAt: -1 })
 		.select()
@@ -18,34 +18,45 @@ router.get("/all", authenticateJWT, (req, res, next) => {
 
 //Add Image
 router.post("/add", authenticateJWTAdmin, (req, res, next) => {
-	const image = new Images({
-		_id: new mongoose.Types.ObjectId(),
-		caption: req.body.caption,
-		url: req.body.url,
-		updatedAt: new Date(),
+	Images.exists({ key: req.body.key }).then((result) => {
+		console.log("Result", result);
+		if (result) {
+			return res.status(400).json({
+				message: "Image Already Exists in DB",
+				error: "Duplicate Image",
+			});
+		} else {
+			const image = new Images({
+				_id: new mongoose.Types.ObjectId(),
+				caption: req.body.caption,
+				url: req.body.url,
+				updatedAt: new Date(),
+				key: req.body.key,
+			});
+			image
+				.save()
+				.then((result) => {
+					res.status(201).json({
+						message: "Image Uploaded",
+						info: {
+							...result._doc,
+						},
+					});
+				})
+				.catch((err) => {
+					console.log(JSON.stringify(err));
+					res.status(500).json({
+						error: err,
+					});
+				});
+		}
 	});
-	image
-		.save()
-		.then((result) => {
-			res.status(201).json({
-				message: "Image Uploaded",
-				info: {
-					...result._doc,
-				},
-			});
-		})
-		.catch((err) => {
-			console.log(JSON.stringify(err));
-			res.status(500).json({
-				error: err,
-			});
-		});
 });
 
 //Delete Image - TEST ONLY
 router.delete("/remove/:id", authenticateJWTAdmin, (req, res, next) => {
 	let id = req.params.id;
-	Images.deleteOne(id)
+	Images.deleteOne({ _id: id })
 		.exec()
 		.then((result) => {
 			res.status(200).json({ message: "Image Deleted" });
